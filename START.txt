@@ -1,29 +1,26 @@
 
-
-#include <Wire.h>                      //i2c library
-#include "BMP085.h"                    //bmp085 library, download from url link (1)
-#include <Tone.h>                      //tone library, download from url link (3)
-#include<stdlib.h>                     //we need that to use dtostrf() and convert float to string
-
-
+#include <Wire.h>                      
+#include "BMP085.h"                   
+#include <Tone.h>                      
+#include<stdlib.h>                     
 
 /////////////////////////////////////////
-///////////////////////////////////////// variables that You can test and try
-short speaker_pin1 = 8;                  //arduino speaker output -
-short speaker_pin2 = 9;                  //arduino speaker output +
-float vario_climb_rate_start = 0.4;      //minimum climb beeping value(ex. start climbing beeping at 0.4m/s)
-float vario_sink_rate_start = -1.0;      //maximum sink beeping value (ex. start sink beep at -1.1m/s)
-#define SAMPLES_ARR 25                   //define moving average filter array size (2->30), more means vario is less sensitive and slower, NMEA output
-#define NMEA_OUT_per_SEC 3               // NMEA output string samples per second (1 to 20)
-#define VOLUME 2                         // volume setting 0-no sound, 1-low sound volume, 2-high sound volume
-const float p0 = 101325;                 //Pressure at sea level (Pa)
-long     Pressure = 101325;
-float    Altitude=0;
+/////////////////////////////////////////   variaveis de configuraçao do sistema
+short speaker_pin1 = 8;                  // autofalante canal  -
+short speaker_pin2 = 9;                  // autofalante canal  +
+float vario_climb_rate_start = 0.4;      // (ex. 0,4 inicia a   0.4m/s)
+float vario_sink_rate_start = -1.0;      // (ex. 1,1 inicia a  -1.1m/s)
+#define SAMPLES_ARR 25                   // define o filtro da sensibilidade do variometro 
+#define NMEA_OUT_per_SEC 3               // tempo de saida protocolo NMEA Serial
+#define VOLUME 2                         // volume configuração  0-sem som  , 1- volume baixo , 2-volume alto
+const float p0 = 101325;                 // Pressao nivel do mar (Pa)
+long     Pressure = 101325;              //
+float    Altitude=0;                     //
 /////////////////////////////////////////
 /////////////////////////////////////////
 
 
-BMP085   bmp085 = BMP085();              //set up bmp085 sensor
+BMP085   bmp085 = BMP085();              
 Tone     tone_out1;
 Tone     tone_out2;
 long     Temperature = 0;
@@ -33,8 +30,8 @@ unsigned long get_time2 = millis();
 unsigned long get_time3 = millis();
 
 int      my_temperature = 1;
-char     altitude_arr[6];            //wee need this array to translate float to string 
-char     vario_arr[6];               //wee need this array to translate float to string
+char     altitude_arr[6];             
+char     vario_arr[6];               
 int      samples=40;
 int      maxsamples=50;
 float    alt[51];
@@ -46,7 +43,7 @@ float    Beep_period;
 
 static long k[SAMPLES_ARR];
 static long Averaging_Filter(long input);
-static long Averaging_Filter(long input) // moving average filter function
+static long Averaging_Filter(long input) 
 {
   long sum = 0;
   for (int i = 0; i < SAMPLES_ARR; i++) {
@@ -62,20 +59,20 @@ static long Averaging_Filter(long input) // moving average filter function
 
 //---------------------------------------------------------------------------------------------------------
 
-void play_welcome_beep()                 //play only once welcome beep after turning on arduino vario
+void play_welcome_beep()                 //som inicial 
 {
   
      
   for (int aa=300;aa<=1500;aa=aa+100)
   {
-    tone_out1.play(aa,200);             // play beep on pin (note,duration)
-   if (VOLUME==2){ tone_out2.play(aa+5,200);}             // play beep on pin (note,duration)
+    tone_out1.play(aa,200);           
+   if (VOLUME==2){ tone_out2.play(aa+5,200);}             
     delay(100);
   }
   for (int aa=1500;aa>=100;aa=aa-100)
   {
-    tone_out1.play(aa,200);             // play beep on pin (note,duration)
-   if (VOLUME==2){ tone_out2.play(aa+5,200);}             // play beep on pin (note,duration)
+    tone_out1.play(aa,200);             
+   if (VOLUME==2){ tone_out2.play(aa+5,200);}             
     delay(100);
   }
 }
@@ -84,35 +81,31 @@ void play_welcome_beep()                 //play only once welcome beep after tur
 
 //---------------------------------------------  void setup  ------------------------------------------------------------
 
-void setup()                // setup() function to setup all necessary parameters before we go to endless loop() function
+void setup()                
 {
-  Wire.begin();                   // lets init i2c protocol
+  Wire.begin();                   
   
 //---------------------------------------------------------------------------------------------------------
   
   if (VOLUME==1){
-  tone_out1.begin(speaker_pin1);       // piezo speaker output pin8 -
-  pinMode(speaker_pin2, OUTPUT);      // set pin for output NMEA LED blink;
+  tone_out1.begin(speaker_pin1);       
+  pinMode(speaker_pin2, OUTPUT);      
   digitalWrite(speaker_pin2, LOW); 
   } 
   else if (VOLUME==2){
-  tone_out1.begin(speaker_pin1);       // piezo speaker output pin8 -
-  tone_out2.begin(speaker_pin2);       // piezo speaker output pin9 +
+  tone_out1.begin(speaker_pin1);       
+  tone_out2.begin(speaker_pin2);       
   }
   
 //---------------------------------------------------------------------------------------------------------
   
   
   bmp085.init(MODE_ULTRA_HIGHRES, p0, false); 
-                            // BMP085 ultra-high-res mode, 101325Pa = 1013.25hPa, false = using Pa units
-                            // this initialization is useful for normalizing pressure to specific datum.
-                            // OR setting current local hPa information from a weather station/local airport (QNH).
+                         
   
+//---------------------------------------- -----------------------------------------------------------------
   
-  
-//----------------------------------------Beeb Inicial -----------------------------------------------------------------
-  
-  play_welcome_beep();      //everything is ready, play "welcome" sound
+  play_welcome_beep();      
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -123,13 +116,13 @@ float nmea_alt_m=0;
 float nmea_old_alt_m=0;
 
 
-char variostring[6], altstring[6]; // create string arrays
+char variostring[6], altstring[6]; 
 
 //--------------------------------------------  void loop  -------------------------------------------------------------
 
 void loop(void)
 {
-  float time=millis();              //take time, look into arduino millis() function
+  float time=millis();             
   float vario=0;
   float N1=0;
   float N2=0;
@@ -139,9 +132,9 @@ void loop(void)
  
 
 //-------------------------------------------- Calculo Pressao ------------------------------------------------------------- 
-  bmp085.calcTruePressure(&Pressure);                                   //get one sample from BMP085 in every loop
-  long average_pressure = Averaging_Filter(Pressure);                   //put it in filter and take average, this averaging is for NMEA output
-  Altitude = (float)44330 * (1 - pow(((float)Pressure/p0), 0.190295));  //take new altitude in meters from pressure sample, not from average pressure
+  bmp085.calcTruePressure(&Pressure);                                  
+  long average_pressure = Averaging_Filter(Pressure);                   
+  Altitude = (float)44330 * (1 - pow(((float)Pressure/p0), 0.190295));  
 
 //--------------------------------------------- Calculo Altitude ------------------------------------------------------------
  nmea_alt_m = (float)44330 * (1 - pow(((float)average_pressure/p0), 0.190295));
@@ -153,15 +146,15 @@ void loop(void)
 
 //----------------------------------------------  Variometro -----------------------------------------------------------
 
-  for(int cc=1;cc<=maxsamples;cc++){                                    //vario algorithm
-    alt[(cc-1)]=alt[cc];                                                //move "altitude" value in every loop inside table
-    tim[(cc-1)]=tim[cc];                                                //move "time" value in every loop inside table
+  for(int cc=1;cc<=maxsamples;cc++){                                    
+    alt[(cc-1)]=alt[cc];                                                
+    tim[(cc-1)]=tim[cc];                                               
   };  
   
  
   //now we have altitude-time tables
-  alt[maxsamples]=Altitude;                                             //put current "altitude" value on the end of the table
-  tim[maxsamples]=time;                                                 //put current "time" value on the end of the table
+  alt[maxsamples]=Altitude;                                             
+  tim[maxsamples]=time;                                                 
   float stime=tim[maxsamples-samples];
   for(int cc=(maxsamples-samples);cc<maxsamples;cc++){
     N1+=(tim[cc]-stime)*alt[cc];
@@ -172,7 +165,7 @@ void loop(void)
   };
 
  vario=1000*((samples*N1)-N2*N3)/(samples*D1-D2*D2);
- if ((time-beep)>Beep_period)                          // make some beep
+ if ((time-beep)>Beep_period)                         
   {
     beep=time;
     if (vario>vario_climb_rate_start && vario<=10 )
@@ -183,10 +176,10 @@ void loop(void)
           break;
         case 1:
           Beep_period=550-(vario*(30+vario));
-          tone_out1.play((1400+(200*vario)),420-(vario*(20+vario))); //when climbing make faster and shorter beeps
+          tone_out1.play((1400+(200*vario)),420-(vario*(20+vario)));
         case 2:
           Beep_period=550-(vario*(30+vario));
-          tone_out1.play((1400+(200*vario)),420-(vario*(20+vario))); //when climbing make faster and shorter beeps
+          tone_out1.play((1400+(200*vario)),420-(vario*(20+vario))); 
           tone_out2.play((1406+(200*vario)),420-(vario*(20+vario)));
       }               
     } else if (vario >10) 
@@ -198,13 +191,13 @@ void loop(void)
           break;
         case 1:
           Beep_period=160;
-          tone_out1.play(3450,120);                          //spike climb rate
+          tone_out1.play(3450,120);                         
         case 2:
           Beep_period=160;
-          tone_out1.play(3450,120);                          //spike climb rate
+          tone_out1.play(3450,120);                          
           tone_out2.play(3456,120);
       }               
-    } else if (vario< vario_sink_rate_start){           //if you have high performace glider you can change sink beep to -0.95m/s ;)
+    } else if (vario< vario_sink_rate_start){           
      
      switch (VOLUME) 
       {
